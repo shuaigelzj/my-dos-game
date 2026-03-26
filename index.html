@@ -1,34 +1,56 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <style>
-        html, body { width: 100%; height: 100%; margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
-        #jsdos { width: 100%; height: 100%; }
-        #ui-layer { position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; gap: 10px; }
-        .btn { background: rgba(50, 50, 50, 0.8); color: white; border: 1px solid #777; padding: 5px 12px; cursor: pointer; font-size: 13px; border-radius: 4px; }
-        .btn:hover { background: #555; }
-        #overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-    </style>
+    <title>我的私有 DOS 游戏站</title>
+    <!-- 引入 js-dos v7 标准资源 -->
     <link rel="stylesheet" href="https://js-dos.com/v7/build/releases/latest/js-dos/js-dos.css"></link>
     <script src="https://js-dos.com/v7/build/releases/latest/js-dos/js-dos.js"></script>
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
+        #jsdos { width: 100vw; height: 100vh; }
+        
+        /* UI 按钮层 */
+        #ui-layer { 
+            position: absolute; top: 15px; left: 15px; z-index: 100; 
+            display: none; gap: 10px; align-items: center;
+        }
+        .btn { 
+            background: rgba(40, 44, 52, 0.9); color: #61dafb; border: 1px solid #61dafb; 
+            padding: 8px 15px; cursor: pointer; font-size: 14px; border-radius: 6px; font-weight: bold;
+        }
+        .btn:hover { background: #61dafb; color: #000; }
+
+        /* 初始导入界面 */
+        #overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #1a1a1a; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 1000; 
+        }
+        .upload-box { border: 2px dashed #444; padding: 40px; border-radius: 12px; text-align: center; }
+        input[type="file"] { margin-top: 20px; color: #888; }
+    </style>
 </head>
 <body>
 
-    <!-- 操作按钮 -->
-    <div id="ui-layer" style="display: none;">
-        <button class="btn" id="saveBtn">💾 导出存档并备份</button>
-        <span id="status" style="font-size: 12px; align-self: center; color: #aaa;">进度自动保存中...</span>
+    <!-- 顶部操作栏 -->
+    <div id="ui-layer">
+        <button class="btn" id="saveBtn">💾 导出存档 (备份到本地)</button>
+        <span id="status" style="font-size: 12px; color: #888;">进度已启用浏览器自动保存</span>
     </div>
 
-    <!-- 初始引导 -->
+    <!-- 初始文件选择 -->
     <div id="overlay">
-        <h2>DOS 游戏实验室</h2>
-        <p>第一步：选择游戏 ROM (.zip)</p>
-        <input type="file" id="romInput" accept=".zip">
+        <div class="upload-box">
+            <h1>DOS 游戏站</h1>
+            <p>请选择你的游戏 ROM (.zip 格式)</p>
+            <input type="file" id="romInput" accept=".zip">
+            <p style="font-size: 12px; color: #666; margin-top: 20px;">注：文件仅在本地运行，不会上传到服务器</p>
+        </div>
     </div>
 
+    <!-- 游戏渲染区域 -->
     <div id="jsdos"></div>
 
     <script>
@@ -36,37 +58,64 @@
         const saveBtn = document.getElementById('saveBtn');
         const uiLayer = document.getElementById('ui-layer');
         const overlay = document.getElementById('overlay');
-        let ciInstance = null; // 存储运行实例
+        const jsdosContainer = document.getElementById('jsdos');
+        
+        let ciInstance = null; // 运行实例句柄
 
+        // 监听文件选择
         romInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
+            // 隐藏引导层，显示操作栏
             overlay.style.display = 'none';
             uiLayer.style.display = 'flex';
 
-            // 启动模拟器
-            // 注意：js-dos v7 默认会尝试使用 IndexedDB 自动持久化
-            ciInstance = await emulators.launch(URL.createObjectURL(file), "jsdos");
+            try {
+                // 1. 初始化 Dos 实例 (v7 API)
+                // Dos 是 js-dos.js 暴露的全局函数
+                const instance = await Dos(jsdosContainer);
+
+                // 2. 准备游戏文件 URL
+                const gameUrl = URL.createObjectURL(file);
+
+                // 3. 运行游戏
+                // v7 的运行逻辑是 instance.run(url)
+                ciInstance = await instance.run(gameUrl);
+                
+                console.log("JSDOS 启动成功");
+            } catch (err) {
+                console.error("启动失败:", err);
+                alert("启动失败！请确保选择的是标准的 DOS 游戏 ZIP 包。");
+                location.reload(); // 失败则重置
+            }
         });
 
-        // 导出存档逻辑
+        // 存档导出功能
         saveBtn.addEventListener('click', async () => {
             if (!ciInstance) return;
-            
-            // persist() 会提取当前虚拟盘中所有改变的文件（即存档）
-            const changes = await ciInstance.persist();
-            
-            // 将二进制数据转为可下载文件
-            const blob = new Blob([changes], { type: "application/octet-stream" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "dos_game_save_" + new Date().getTime() + ".jsdos";
-            a.click();
-            
-            document.getElementById('status').innerText = "导出成功！";
-            setTimeout(() => { document.getElementById('status').innerText = "进度自动保存中..."; }, 3000);
+
+            try {
+                // persist() 会提取虚拟磁盘中所有被修改的文件（即存档）
+                const changes = await ciInstance.persist();
+                
+                const blob = new Blob([changes], { type: "application/octet-stream" });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `DOS_Save_${new Date().getTime()}.jsdos`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                const status = document.getElementById('status');
+                status.innerText = "导出成功！下次换电脑可将此文件拖入窗口恢复。";
+                setTimeout(() => { status.innerText = "进度已启用浏览器自动保存"; }, 5000);
+            } catch (err) {
+                console.error("导出失败:", err);
+                alert("导出存档失败。");
+            }
         });
     </script>
 </body>
