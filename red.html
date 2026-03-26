@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <style>
+        html, body, #jsdos { width: 100%; height: 100%; margin: 0; padding: 0; }
+    </style>
+    <!-- 引入 js-dos 核心库 -->
+    <link rel="stylesheet" href="https://js-dos.com">
+    <script src="https://js-dos.com"></script>
+</head>
+<body>
+    <div id="jsdos"></div>
+    <script>
+        // 这里的 doom.zip 换成你放在 roms 文件夹下的文件名
+        emulators.launch("roms/159f7fa196165cb4369e2b6a753fd73.zip", "jsdos", {
+            // 如果你的压缩包里有特定的启动程序，可以在这里指定
+            // arguments: ["DOOM.EXE"] 
+        });
+    </script>
+</body>
+</html>
