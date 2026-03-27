@@ -37,6 +37,7 @@
     <!-- 顶部操作栏 -->
     <div id="ui-layer">
         <button class="btn" id="saveBtn">💾</button>
+        <span id="status" style="font-size: 12px; color: #888;">进度已启用浏览器自动保存</span>
         <input type="file" id="loadSaveInput" style="display:none" accept=".jsdos,.zip">
         <button class="btn" onclick="document.getElementById('loadSaveInput').click()">📂</button>
     </div>
@@ -87,10 +88,20 @@
                 // 3. 运行游戏
                 // v7 的运行逻辑是 instance.run(url)
                 ciInstance = await instance.run(gameUrl, {
-                    id: gameId // 必须提供固定 ID，否则每次运行都是新环境
+                    id: gameId, // 必须提供固定 ID，否则每次运行都是新环境
+                    // 强制将 ZIP 内容拷贝到 C 盘，这样产生的存档才能被捕捉
+                    copyToC: true 
                 });
                 
-                console.log("JSDOS 启动成功");
+                console.log("游戏已启动，ID:", gameId);
+                
+                // 自动定时保存逻辑（每 30 秒自动同步一次到浏览器数据库）
+                setInterval(async () => {
+                    if (ciInstance) {
+                        await ciInstance.persist();
+                        console.log("进度已自动同步到 IndexedDB");
+                    }
+                }, 30000);
             } catch (err) {
                 console.error("启动失败:", err);
                 alert("启动失败！请确保选择的是标准的 DOS 游戏 ZIP 包。");
