@@ -37,6 +37,8 @@
     <!-- 顶部操作栏 -->
     <div id="ui-layer">
         <button class="btn" id="saveBtn">💾</button>
+        <input type="file" id="loadSaveInput" style="display:none" accept=".jsdos,.zip">
+        <button class="btn" onclick="document.getElementById('loadSaveInput').click()">📂</button>
     </div>
 
     <!-- 初始文件选择 -->
@@ -69,6 +71,10 @@
             // 隐藏引导层，显示操作栏
             overlay.style.display = 'none';
             uiLayer.style.display = 'flex';
+            
+            // 1. 获取文件名作为唯一 ID（只要文件名不变，进度就能找回）
+            const gameId = file.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
 
             try {
                 // 1. 初始化 Dos 实例 (v7 API)
@@ -80,7 +86,9 @@
 
                 // 3. 运行游戏
                 // v7 的运行逻辑是 instance.run(url)
-                ciInstance = await instance.run(gameUrl);
+                ciInstance = await instance.run(gameUrl, {
+                    id: gameId // 必须提供固定 ID，否则每次运行都是新环境
+                });
                 
                 console.log("JSDOS 启动成功");
             } catch (err) {
@@ -114,6 +122,29 @@
             } catch (err) {
                 console.error("导出失败:", err);
                 alert("导出存档失败。");
+            }
+        });
+
+        const loadSaveInput = document.getElementById('loadSaveInput');
+        loadSaveInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || !ciInstance) return;
+        
+            try {
+                // 将存档文件读取为 ArrayBuffer
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    const buffer = new Uint8Array(reader.result);
+                    
+                    // 关键 API：将增量数据写入当前运行的实例
+                    // 这会直接覆盖虚拟磁盘中的同名文件
+                    await ciInstance.unpersist(buffer); 
+                    
+                    alert("存档已载入！请在游戏中尝试读取，或刷新页面重新进入。");
+                };
+                reader.readAsArrayBuffer(file);
+            } catch (err) {
+                console.error("恢复存档失败:", err);
             }
         });
     </script>
