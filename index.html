@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>我的私有 DOS 游戏站</title>
     <!-- 引入 js-dos v7 标准资源 -->
-    <link rel="stylesheet" href="https://js-dos.com/v7/build/releases/latest/js-dos/js-dos.css"></link>
-    <script src="https://js-dos.com/v7/build/releases/latest/js-dos/js-dos.js"></script>
+    <link rel="stylesheet" href="./js-dos.css"></link>
+    <script src="./js-dos.js"></script>
     <style>
         html, body { width: 100%; height: 100%; margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; }
         #jsdos { width: 100vw; height: 100vh; }
@@ -62,7 +62,6 @@
         
         let ciInstance = null; // 运行实例句柄
 
-        emulators.pathPrefix = "https://js-dos.com/v7/build/releases/latest/js-dos/"
         // 监听文件选择
         romInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
