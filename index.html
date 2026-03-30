@@ -149,7 +149,7 @@
                     
                     // 关键 API：将增量数据写入当前运行的实例
                     // 这会直接覆盖虚拟磁盘中的同名文件
-                    await ciInstance.unpersist(buffer); 
+                    await ciInstance.fs.extract(buffer); 
                     
                     alert("存档已载入！请在游戏中尝试读取，或刷新页面重新进入。");
                 };
